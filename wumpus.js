@@ -11,7 +11,7 @@ function preload() {
 
 function setup() {
   createCanvas(400, 400);
-  juego = new JuegoWumpus(8,2);
+  juego = new JuegoWumpus(8,4);
 }
 
 function draw() {
@@ -107,7 +107,7 @@ class JuegoWumpus {
     return camino;
   }
 
-  obtenerVecinos(actual) {
+ obtenerVecinos(actual) {
     let vecinos = [];
     let movimientos = [
       createVector(0, -1), // Arriba
@@ -115,20 +115,32 @@ class JuegoWumpus {
       createVector(-1, 0), // Izquierda
       createVector(1, 0)   // Derecha
     ];
-
+  
     for (let movimiento of movimientos) {
       let nuevaPos = p5.Vector.add(actual, movimiento);
-      if (nuevaPos.x >= 0 && nuevaPos.x < this.tamaño && nuevaPos.y >= 0 && nuevaPos.y < this.tamaño) {
+      if (
+        nuevaPos.x >= 0 &&
+        nuevaPos.x < this.tamaño &&
+        nuevaPos.y >= 0 &&
+        nuevaPos.y < this.tamaño &&
+        !this.posicionWumpus.equals(nuevaPos) &&
+        this.laberinto[nuevaPos.x][nuevaPos.y] !== 'agujero'
+      ) {
         vecinos.push(nuevaPos);
       }
     }
-
+  
     return vecinos;
   }
 
+
   heuristica(a, b) {
-    return dist(a.x, a.y, b.x, b.y);
+    let distancia = dist(a.x, a.y, b.x, b.y);
+    let penalizacionWumpus = this.posicionWumpus.dist(a) * 0.5; // Ajusta el factor de penalización según tus preferencias
+    let penalizacionAgujero = this.laberinto[a.x][a.y] === 'agujero' ? 10 : 0; // Ajusta el factor de penalización según tus preferencias
+    return distancia + penalizacionWumpus + penalizacionAgujero;
   }
+
 
   mover(paso) {
     this.posicionJugador = paso;
@@ -158,6 +170,7 @@ class JuegoWumpus {
       }
     }
   }
+  
   mostrar() {
     for (let i = 0; i < this.tamaño; i++) {
       for (let j = 0; j < this.tamaño; j++) {
