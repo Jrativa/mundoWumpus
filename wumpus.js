@@ -11,7 +11,7 @@ function preload() {
 
 function setup() {
   createCanvas(400, 400);
-  juego = new JuegoWumpus(5);
+  juego = new JuegoWumpus(8,2);
 }
 
 function draw() {
@@ -28,19 +28,27 @@ class JuegoWumpus {
     this.posicionJugador = createVector(0, 0);
     this.posicionWumpus = createVector(floor(random(tamaño)), floor(random(tamaño)));
     this.posicionOro = createVector(floor(random(tamaño)), floor(random(tamaño)));
-    this.colocarAgujerosAleatoriamente(numeroAgujeros);
-    this.actualizarBrisas();
+    this.colocarAgujerosConBrisaAleatoriamente(numeroAgujeros);
     this.camino = [];
     frameRate(2);
   }
   
-  colocarAgujerosAleatoriamente(numeroAgujeros) {
+  colocarAgujerosConBrisaAleatoriamente(numeroAgujeros) {
     for (let i = 0; i < numeroAgujeros; i++) {
       let x = floor(random(this.tamaño));
       let y = floor(random(this.tamaño));
-      this.laberinto[x][y].agujero = 1;
+  
+      // Colocar agujero
+      this.laberinto[x][y] = 'agujero';
+  
+      // Colocar brisa en las celdas adyacentes
+      if (x > 0) {this.laberinto[x - 1][y] = 'brisa';} // Izquierda
+      if (x < this.tamaño - 1) {this.laberinto[x + 1][y] = 'brisa';} // Derecha
+      if (y > 0) {this.laberinto[x][y - 1] = 'brisa';} // Arriba
+      if (y < this.tamaño - 1) {this.laberinto[x][y + 1] = 'brisa';} // Abajo
     }
   }
+
 
   calcularCaminoAStar(inicio, fin) {
     let openSet = [inicio];
@@ -136,6 +144,18 @@ class JuegoWumpus {
     if (this.camino.length > 0) {
       this.mover(this.camino[0]);
       this.camino.shift();
+
+      // Verificar si el jugador ha caído en un agujero
+      if (this.laberinto[this.posicionJugador.x][this.posicionJugador.y] === 'agujero') {
+        console.log('¡Has caído en un agujero! Juego terminado.');
+        noLoop(); // Detener el bucle de dibujo
+      }
+
+      // Verificar si el jugador ha encontrado al Wumpus
+      if (this.posicionJugador.equals(this.posicionWumpus)) {
+        console.log('¡Te encontraste con el Wumpus! Juego terminado.');
+        noLoop(); // Detener el bucle de dibujo
+      }
     }
   }
   mostrar() {
@@ -150,8 +170,10 @@ class JuegoWumpus {
           image(wumpusImg, x, y, this.celdaSize, this.celdaSize);
         } else if (this.posicionOro.equals(createVector(i, j))) {
           image(oroImg, x, y, this.celdaSize, this.celdaSize);
-        } else if (this.laberinto[i][j].agujero.equals(1)) {
+        } else if (this.laberinto[i][j]==='agujero') {
           image(agujeroImg, x, y, this.celdaSize, this.celdaSize);
+        } else if (this.laberinto[i][j]==='brisa') {
+          image(brisaImg, x, y, this.celdaSize, this.celdaSize);
         } else {
           fill(200); 
           rect(x, y, this.celdaSize, this.celdaSize);
